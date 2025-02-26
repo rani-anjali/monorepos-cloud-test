@@ -1,22 +1,30 @@
 name: Deploy to staging
 on:
   push:
-    branches: [ main ]
-     
+    branches:
+      - main
 
 jobs:
   redeploy_everything:
-    runs-on: ubuntu-latest
-    name: Deploying the everything to staging cluster
-    steps: 
-      - run: |
-          echo ${{ secrets.MY_SSH_PRIVATE_KEY}} &> ~/ssh_key
-          ssh -i ~/ssh_key root@139.59.70.111
-          cd monorepos-cloud-test/ && git pull
-          pnpm install
-          pnpm run build 
-          pm2 restart http-server
-          pm2 restart web
-          pm2 restart web-server
+    runs-on: ubuntu-latest  # Fixed `runs-on`
+    name: Deploying everything to the staging cluster
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
 
+      - name: Set up SSH Key
+        run: |
+          echo "${{ secrets.MY_SSH_PRIVATE_KEY }}" > ~/ssh_key
+          chmod 600 ~/ssh_key
 
+      - name: Deploy to Server
+        run: |
+          ssh -o StrictHostKeyChecking=no -i ~/ssh_key root@139.59.70.111 << 'EOF'
+            cd monorepos-cloud-test/
+            git pull
+            pnpm install
+            pnpm run build
+            pm2 restart http-server
+            pm2 restart web
+            pm2 restart web-server
+          EOF
