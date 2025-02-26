@@ -6,7 +6,7 @@ on:
 
 jobs:
   redeploy_everything:
-    runs_on: ubuntu-latest
+    runs-on: ubuntu-latest
     name: Deploying the everything to staging cluster
     steps: 
       - run: |
