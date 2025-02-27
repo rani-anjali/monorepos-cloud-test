@@ -1,34 +1,22 @@
-name: Deploy to Staging
+name: Deploy to staging
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
+     
 
 jobs:
   redeploy_everything:
-    runs-on: ubuntu-latest  
-    name: Deploying everything to the staging cluster
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+    runs-on: ubuntu-latest
+    name: Deploying the everything to staging cluster
+    steps: 
+      - run: |
+          echo ${{ secrets.MY_SSH_PRIVATE_KEY}} &> ~/ssh_key
+          ssh -i ~/ssh_key root@139.59.70.111
+          cd monorepos-cloud-test/ && git pull
+          pnpm install
+          pnpm run build 
+          pm2 restart http-server
+          pm2 restart web
+          pm2 restart web-server
 
-      - name: Set up SSH Agent
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.MY_SSH_PRIVATE_KEY }}
 
-      - name: Deploy to Server
-        run: |
-          ssh -o StrictHostKeyChecking=no root@${{ secrets.SERVER_IP }} << 'EOF'
-            set -e
-            cd monorepos-cloud-test/
-            git pull
-            curl -fsSL https://get.pnpm.io/install.sh | sh -
-            export PATH="$HOME/.local/share/pnpm:$PATH"
-            pnpm install
-            pnpm run build
-            npm install -g pm2
-            pm2 restart http-server
-            pm2 restart web
-            pm2 restart web-server
-          EOF
